@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hhru-parser"
+version = "0.1.0"
+description = "Parcser for hhru"
+authors = [{name = "Alex"}]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4",
+    "sqlalchemy",
+    "pydantic",
+    "httpx"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
