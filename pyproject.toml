@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hhru-parser"
 version = "0.1.0"
-description = "Parcser for hhru"
+description = "Parser for hhru"
 authors = [{name = "Alex"}]
 readme = "README.md"
 requires-python = ">=3.10"
