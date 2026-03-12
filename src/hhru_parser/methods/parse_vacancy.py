@@ -1,6 +1,13 @@
 from bs4 import BeautifulSoup
 
-def parse_vacancy_html(html: str) -> dict:
+def extract_vacancy_id(url: str) -> int | None:
+    parts = url.rstrip("/").split("/")
+    if parts and parts[-1].isdigit():
+        return int(parts[-1])
+    return None
+
+
+def parse_vacancy_html(html: str, url: str) -> dict:
     soup = BeautifulSoup(html, "html.parser")
 
     title_el = soup.find(attrs={"data-qa": "vacancy-title"})
@@ -17,11 +24,15 @@ def parse_vacancy_html(html: str) -> dict:
         salary_span = title_el.parent.find("span")
         if salary_span:
             salary = salary_span.get_text(" ", strip=True)
-    
+
     desc_el = soup.find("div", class_="vacancy-description")
     description = desc_el.get_text(" ", strip=True) if desc_el else None
 
+    vacancy_id = extract_vacancy_id(url)
+
     return {
+        "vacancy_id": vacancy_id,
+        "url": url,
         "title": title,
         "company": company,
         "experience": experience,
