@@ -17,4 +17,6 @@ class Vacancy(Base):
 
     salary_text: Mapped[str | None] = mapped_column(String)
 
+    salary_avg: Mapped[str | None] = mapped_column(Integer)
+    
     description: Mapped[str | None] = mapped_column(Text)

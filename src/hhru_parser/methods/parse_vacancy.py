@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import re
 
 def extract_vacancy_id(url: str) -> int | None:
     parts = url.rstrip("/").split("/")
@@ -6,6 +7,32 @@ def extract_vacancy_id(url: str) -> int | None:
         return int(parts[-1])
     return None
 
+
+def parse_salary_avg(salary_text: str | None) -> int | None:
+    if not salary_text:
+        return None
+
+    salary_text = salary_text.replace("\xa0", " ")
+
+    numbers = re.findall(r"\d[\d ]*", salary_text)
+    values = []
+
+    for num in numbers:
+        num = num.replace(" ", "")
+        if num.isdigit():
+            values.append(int(num))
+
+    if not values:
+        return None
+
+    if len(values) == 1:
+        return values[0]
+
+    return sum(values[:2]) // 2
+
+    
+        
+        
 
 def parse_vacancy_html(html: str, url: str) -> dict:
     soup = BeautifulSoup(html, "html.parser")
@@ -28,6 +55,7 @@ def parse_vacancy_html(html: str, url: str) -> dict:
     desc_el = soup.find("div", class_="vacancy-description")
     description = desc_el.get_text(" ", strip=True) if desc_el else None
 
+    salary_avg = parse_salary_avg(salary)
     vacancy_id = extract_vacancy_id(url)
 
     return {
@@ -37,5 +65,6 @@ def parse_vacancy_html(html: str, url: str) -> dict:
         "company": company,
         "experience": experience,
         "salary_text": salary,
+        "salary_avg": salary_avg,
         "description": description,
     }

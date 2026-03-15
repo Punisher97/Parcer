@@ -27,6 +27,7 @@ def save_vacancy(session: Session, data: dict) -> Vacancy:
     vacancy.title = data.get("title")
     vacancy.company = data.get("company")
     vacancy.salary_text = data.get("salary_text")
+    vacancy.salary_avg = data.get("salary_avg")
     vacancy.experience = data.get("experience")
     vacancy.description = data.get("description")
 

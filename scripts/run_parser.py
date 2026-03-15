@@ -8,6 +8,13 @@ from hhru_parser.db.init_db import init_db
 from hhru_parser.db import SessionLocal
 from hhru_parser.db.save_vacancy import save_vacancy
 
+from hhru_parser.stats.compute_by_vacancy import (
+    compute_average_salary,
+    get_salaries_by_query,
+    plot_salary_distribution,
+)
+
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -41,6 +48,11 @@ def main():
 
                 data = parse_vacancy_html(html, url=url)
 
+                if data["title"] is None:
+                    with open("debug/bad_vacancy.html", "w", encoding='utf-8') as f:
+                        f.write(html)
+
+
                 save_vacancy(session, data)
 
                 print("Saved:", data["title"])
@@ -48,6 +60,12 @@ def main():
             except Exception as e:
                 print("Error:", e)
 
+
+        avg_salary = compute_average_salary(session, query)
+        print("Average salary:", avg_salary)
+
+        salaries = get_salaries_by_query(session, query)
+        plot_salary_distribution(salaries, query)
 
 if __name__ == "__main__":
     main()
