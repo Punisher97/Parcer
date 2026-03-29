@@ -1,30 +1,72 @@
-from pathlib import Path
+import asyncio
+from typing import Optional
+
 import httpx
 
-def save_html(html, path):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Path(path).write_text(html, encoding="utf-8")
+from hhru_parser.methods.base import BaseParser
 
-def fetch_text(url: str, timeout: float = 15.0) -> str:
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/122.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+}
 
-    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) hhru-parser/0.1",
-    "Accept-Language": "ru,en;q=0.9",
-    }
 
-    try:
-        with httpx.Client(headers=headers, timeout=timeout, follow_redirects=True) as client:
-            resp = client.get(url)
-    except httpx.TimeoutException as e:
-        raise RuntimeError(f"Timeout while fetching {url}") from e
-    except httpx.HTTPError as e:
-        raise RuntimeError(f"HTTP/network error while fetching {url}: {e}") from e
-    
-    if resp.status_code != 200:
+class HTTPParser(BaseParser):
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        retries: int = 3,
+        retry_delay: float = 1.0,
+    ) -> None:
+        self.client = client
+        self.retries = retries
+        self.retry_delay = retry_delay
 
-        if resp.status_code == 403:
-            raise RuntimeError(f"403 Forbidden for {url} (possible anti-bot block)")
-        if resp.status_code == 429:
-            raise RuntimeError(f'429 Too Many Requests for {url}')
-        raise RuntimeError(f"Bad status {resp.status_code} for {url}")
+    async def fetch_text(self, url: str) -> str:
+        last_error: Exception| None = None
 
-    return resp.text
+        for attempt in range(1, self.retries + 1):
+            try:
+                response = await self.client.get(url)
+                response.raise_for_status()
+                return response.text
+
+            except httpx.HTTPStatusError as error:
+                last_error = error
+                status_code = error.response.status_code
+
+                if status_code in (403, 404):
+                    raise
+
+                if status_code == 429 and attempt < self.retries:
+                    await asyncio.sleep(self.retry_delay * attempt)
+                    continue
+
+                if attempt < self.retries:
+                    await asyncio.sleep(self.retry_delay * attempt)
+                    continue
+
+            except httpx.RequestError as error:
+                last_error = error
+                if attempt < self.retries:
+                    await asyncio.sleep(self.retry_delay * attempt)
+                    continue
+
+        if last_error is not None:
+            raise last_error
+
+        raise RuntimeError("Unexpected HTTP fetch error")
+
+
+async def create_async_client(timeout: float = 15.0) -> httpx.AsyncClient:
+    limits = httpx.Limits(max_connections=20, max_keepalive_connections=10)
+    return httpx.AsyncClient(
+        headers=DEFAULT_HEADERS,
+        timeout=timeout,
+        follow_redirects=True,
+        limits=limits,
+    )

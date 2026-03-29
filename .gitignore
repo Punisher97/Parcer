@@ -1,12 +1,17 @@
 venv/
 .venv/
 __pycache__/
-debug/
-*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.idea/
 .vscode/
-*.log
-
+debug/
 build/
 dist/
 *.egg-info/
+*.sqlite
+*.sqbpro
+salary_plot.png
 

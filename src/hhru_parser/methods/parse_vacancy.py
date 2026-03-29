@@ -1,14 +1,18 @@
 from bs4 import BeautifulSoup
 import re
 
-def extract_vacancy_id(url: str) -> int | None:
+
+def extract_vacancy_id(url):
     parts = url.rstrip("/").split("/")
     if parts and parts[-1].isdigit():
         return int(parts[-1])
     return None
 
 
-def parse_salary_avg(salary_text: str | None) -> int | None:
+def parse_salary_avg(salary_text):
+    DOLLAR_RATE = 80
+    USD_THRESHOLD = 20000
+
     if not salary_text:
         return None
 
@@ -20,7 +24,12 @@ def parse_salary_avg(salary_text: str | None) -> int | None:
     for num in numbers:
         num = num.replace(" ", "")
         if num.isdigit():
-            values.append(int(num))
+            num_int = int(num)
+
+            if num_int < USD_THRESHOLD:
+                num_int *= DOLLAR_RATE
+
+            values.append(num_int)
 
     if not values:
         return None
@@ -28,13 +37,10 @@ def parse_salary_avg(salary_text: str | None) -> int | None:
     if len(values) == 1:
         return values[0]
 
-    return sum(values[:2]) // 2
+    return (values[0] + values[1]) // 2
 
-    
-        
-        
 
-def parse_vacancy_html(html: str, url: str) -> dict:
+def parse_vacancy_html(html, url, query=None):
     soup = BeautifulSoup(html, "html.parser")
 
     title_el = soup.find(attrs={"data-qa": "vacancy-title"})
@@ -53,7 +59,7 @@ def parse_vacancy_html(html: str, url: str) -> dict:
             salary = salary_span.get_text(" ", strip=True)
 
     desc_el = soup.find("div", class_="vacancy-description")
-    description = desc_el.get_text(" ", strip=True) if desc_el else None
+    description = desc_el.get_text(" ", strip=True) if desc_el else ""
 
     salary_avg = parse_salary_avg(salary)
     vacancy_id = extract_vacancy_id(url)
@@ -67,4 +73,5 @@ def parse_vacancy_html(html: str, url: str) -> dict:
         "salary_text": salary,
         "salary_avg": salary_avg,
         "description": description,
+        "query": query,
     }

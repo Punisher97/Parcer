@@ -4,17 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hhru-parser"
-version = "0.1.0"
-description = "Parser for hhru"
-authors = [{name = "Alex"}]
+version = "0.2.0"
+description = "Async hh.ru vacancy parser"
+authors = [{ name = "Alex" }]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "beautifulsoup4",
-    "sqlalchemy",
-    "pydantic",
-    "httpx"
+    "beautifulsoup4>=4.12.0",
+    "sqlalchemy>=2.0.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.27.0",
+    "matplotlib>=3.8.0",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
